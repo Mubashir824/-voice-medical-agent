@@ -71,6 +71,29 @@ class Config:
     # Huge (48GB+): qwen3:235b-a22b (MoE)
     ollama_llm_model: str = "qwen3:8b"
 
+    # ── OpenRouter Settings (Cloud models - many FREE options) ────────
+    # Get your key: https://openrouter.ai/keys
+    # FREE models (add ":free" suffix): e.g. "meta-llama/llama-3.3-70b-instruct:free"
+    # Browse models: https://openrouter.ai/models
+    openrouter_api_key: str = field(
+        default_factory=lambda: os.getenv("OPENROUTER_API_KEY", "")
+    )
+    openrouter_base_url: str = field(
+        default_factory=lambda: os.getenv(
+            "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
+        )
+    )
+    # Recommended FREE models for medical chat (multilingual):
+    #   "meta-llama/llama-3.3-70b-instruct:free"   - strong, good multilingual
+    #   "deepseek/deepseek-chat-v3-0324:free"      - strong reasoning
+    #   "qwen/qwen-2.5-72b-instruct:free"           - good Urdu/Sindhi
+    #   "google/gemini-2.0-flash-exp:free"          - very fast
+    openrouter_llm_model: str = field(
+        default_factory=lambda: os.getenv(
+            "OPENROUTER_LLM_MODEL", "meta-llama/llama-3.3-70b-instruct:free"
+        )
+    )
+
     # ── ElevenLabs Settings (Premium Multilingual TTS) ────────────────
     elevenlabs_api_key: str = field(default_factory=lambda: os.getenv("ELEVENLABS_API_KEY", ""))
 
@@ -80,7 +103,7 @@ class Config:
     # ── TTS Provider: "pyttsx3" (FREE offline), "edge" (FREE), "openai", "azure", "dashscope" ──
     tts_provider: str = field(default_factory=lambda: os.getenv("TTS_PROVIDER", "openai"))
 
-    # ── LLM Provider: "openai", "dashscope", "ollama" ───────────────
+    # ── LLM Provider: "ollama" (FREE local Qwen), "openrouter", "openai", "dashscope" ──
     llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "ollama"))
 
     # ── Local Whisper STT Settings (FREE - no API key) ──────────────
@@ -123,6 +146,8 @@ class Config:
         if self.llm_provider == "ollama":
             # Ollama is free - just check if running
             pass  # No key needed
+        if self.llm_provider == "openrouter" and not self.openrouter_api_key:
+            errors.append("OPENROUTER_API_KEY is required for OpenRouter LLM")
         if self.stt_provider == "local":
             # Local Whisper is free - no key needed
             pass

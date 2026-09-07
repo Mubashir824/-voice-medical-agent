@@ -51,6 +51,11 @@ class TextToSpeech:
         Returns:
             dict with keys: audio_data (bytes), format (str), language (str)
         """
+        # pyttsx3 and other engines crash (bare assert) on empty text.
+        # Fail fast with a clear message instead of a cryptic traceback.
+        if not text or not text.strip():
+            raise ValueError("TTS received empty text - nothing to synthesize")
+
         if self.provider == "pyttsx3":
             return await self._synthesize_pyttsx3(text, language)
         elif self.provider == "edge":

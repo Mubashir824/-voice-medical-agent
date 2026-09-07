@@ -7,14 +7,29 @@ IMPORTANT: Yeh agent sirf guidance ke liye hai - yeh real doctor ka replacement 
 """
 from typing import Optional
 import logging
+import re
 import time
 
+import httpx
 from openai import OpenAI
 
 from config import Config
 from medical_knowledge import MedicalKnowledgeBase
 
 logger = logging.getLogger(__name__)
+
+# Strips inline thinking blocks ("<think>...</think>") if a model ever
+# leaks them into the visible content instead of the reasoning field.
+_THINK_PATTERN = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+
+# Used when the LLM returns an empty answer (e.g. thinking models that
+# burn the whole token budget on hidden reasoning). The patient must
+# always hear something - an empty string would crash TTS.
+FALLBACK_RESPONSES = {
+    "ur": "معذرت، میں ابھی جواب نہیں بنا سکا۔ براہ کرم اپنا سوال دہرا دیں۔",
+    "sd": "معاف ڪريو، مان هاڻي جواب نه ٺاهي سگهيو. مهرباني ڪري پنهنجو سوال ٻيهر پڇو.",
+    "en": "I'm sorry, I couldn't generate a response just now. Could you please repeat your question?",
+}
 
 
 # ── System prompts for each language ──────────────────────────────────
@@ -132,9 +147,16 @@ class DoctorAgent:
 
     @property
     def llm_client(self) -> OpenAI:
-        """Get the LLM client (OpenAI, Qwen DashScope, or Ollama - all use OpenAI SDK)."""
+        """Get the LLM client (OpenRouter, OpenAI, Qwen DashScope, or Ollama - all use OpenAI SDK)."""
         if self._llm_client is None:
-            if self.config.llm_provider == "dashscope":
+            if self.config.llm_provider == "openrouter":
+                # Cloud models via OpenRouter (OpenAI-compatible API)
+                # Many FREE models available - see https://openrouter.ai/models
+                self._llm_client = OpenAI(
+                    api_key=self.config.openrouter_api_key,
+                    base_url=self.config.openrouter_base_url,
+                )
+            elif self.config.llm_provider == "dashscope":
                 # Qwen via Alibaba DashScope (OpenAI-compatible API)
                 self._llm_client = OpenAI(
                     api_key=self.config.dashscope_api_key,
@@ -153,11 +175,45 @@ class DoctorAgent:
 
     def _get_model_name(self) -> str:
         """Get the LLM model name based on the configured provider."""
-        if self.config.llm_provider == "dashscope":
+        if self.config.llm_provider == "openrouter":
+            return self.config.openrouter_llm_model
+        elif self.config.llm_provider == "dashscope":
             return self.config.qwen_llm_model
         elif self.config.llm_provider == "ollama":
             return self.config.ollama_llm_model
         return self.config.llm_model
+
+    def _call_ollama_native(self, messages: list, max_tokens: int) -> str:
+        """Call Ollama's native /api/chat API with thinking disabled.
+
+        The OpenAI-compatible endpoint (/v1/chat/completions) ignores the
+        `think` switch, so Qwen3 burns the whole token budget on hidden
+        reasoning tokens and returns an EMPTY answer (which crashed TTS).
+        The native API honors `think: false`, giving fast, direct answers
+        - required for voice conversations.
+        """
+        base_url = self.config.ollama_base_url.rstrip("/")
+        # The "/v1" suffix belongs to the OpenAI-compatible API;
+        # the native API lives at the server root.
+        if base_url.endswith("/v1"):
+            base_url = base_url[: -len("/v1")]
+
+        payload = {
+            "model": self._get_model_name(),
+            "messages": messages,
+            "stream": False,
+            "think": False,      # disable Qwen3 hidden reasoning
+            "keep_alive": -1,    # keep the model in RAM between requests
+            "options": {
+                "temperature": 0.7,
+                "num_predict": max_tokens,
+            },
+        }
+        with httpx.Client(timeout=600.0) as client:
+            resp = client.post(f"{base_url}/api/chat", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+        return (data.get("message", {}).get("content") or "").strip()
 
     def _set_language(self, language: str):
         """Set the system prompt based on language."""
@@ -249,25 +305,40 @@ class DoctorAgent:
         # model can reference it properly
         response_max_tokens = 400 if medical_context else 300
 
-        # Call LLM (same code works for OpenAI, Qwen DashScope, and Ollama)
+        # Call LLM
         llm_start = time.perf_counter()
-        create_kwargs = {
-            "model": model,
-            "messages": messages_for_llm,
-            "temperature": 0.7,       # Slightly creative for empathetic responses
-            "max_tokens": response_max_tokens,
-        }
-
-        # Ollama does not support these penalties - only send them
-        # to cloud providers (OpenAI/DashScope)
-        if self.config.llm_provider != "ollama":
-            create_kwargs["presence_penalty"] = 0.3
-            create_kwargs["frequency_penalty"] = 0.3
-
-        response = self.llm_client.chat.completions.create(**create_kwargs)
+        if self.config.llm_provider == "ollama":
+            # Native API - honors `think: false` (OpenAI-compat does not)
+            doctor_response = self._call_ollama_native(
+                messages_for_llm, response_max_tokens
+            )
+        else:
+            # Cloud providers (OpenRouter / DashScope / OpenAI) via OpenAI SDK
+            create_kwargs = {
+                "model": model,
+                "messages": messages_for_llm,
+                "temperature": 0.7,       # Slightly creative for empathetic responses
+                "max_tokens": response_max_tokens,
+                "presence_penalty": 0.3,
+                "frequency_penalty": 0.3,
+            }
+            response = self.llm_client.chat.completions.create(**create_kwargs)
+            doctor_response = (response.choices[0].message.content or "").strip()
         llm_time = time.perf_counter() - llm_start
 
-        doctor_response = response.choices[0].message.content.strip()
+        # Safety net: strip any leaked thinking blocks, then guarantee a
+        # non-empty answer so TTS never receives an empty string.
+        doctor_response = _THINK_PATTERN.sub("", doctor_response).strip()
+        if not doctor_response:
+            logger.warning(
+                "LLM returned an EMPTY response after %.1fs (model: %s). "
+                "Using fallback message.",
+                llm_time,
+                model,
+            )
+            doctor_response = FALLBACK_RESPONSES.get(
+                self.language, FALLBACK_RESPONSES["en"]
+            )
 
         logger.info(
             "⏱ LLM call took %.2fs (model: %s, response: %d chars)",
