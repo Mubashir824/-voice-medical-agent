@@ -77,9 +77,11 @@ class TextToSpeech:
         Voice quality is basic but functional.
         """
         import asyncio
+        import os
         import tempfile
 
-        async def _do_tts():
+        def _do_tts():
+            """Run pyttsx3 synchronously (called via asyncio.to_thread)."""
             import pyttsx3
 
             engine = pyttsx3.init()
@@ -93,11 +95,17 @@ class TextToSpeech:
             }
             keywords = lang_map.get(language, ["english"])
 
+            selected_voice = None
             for voice in voices:
                 for kw in keywords:
                     if kw in voice.name.lower() or kw in voice.id.lower():
-                        engine.setProperty("voice", voice.id)
+                        selected_voice = voice.id
                         break
+                if selected_voice:
+                    break
+
+            if selected_voice:
+                engine.setProperty("voice", selected_voice)
 
             # Set speech rate (slightly slower for clarity)
             engine.setProperty("rate", 140)
@@ -115,7 +123,6 @@ class TextToSpeech:
             with open(temp_path, "rb") as f:
                 audio_data = f.read()
 
-            import os
             os.unlink(temp_path)
 
             return audio_data

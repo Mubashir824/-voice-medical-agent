@@ -4,6 +4,7 @@ Yeh file STT → Doctor Agent → TTS ka poora flow manage karti hai.
 """
 import asyncio
 import logging
+import time
 from typing import Optional
 
 from config import Config
@@ -88,12 +89,17 @@ class VoiceMedicalAgent:
         if not self.is_active:
             raise RuntimeError("Session not started. Call start_session() first.")
 
+        pipeline_start = time.perf_counter()
+
         # Step 1: Speech-to-Text
         logger.info("Step 1: Transcribing user audio...")
+        stt_start = time.perf_counter()
         stt_result = await self.stt.transcribe(
             audio_data, self.language, file_extension
         )
+        stt_time = time.perf_counter() - stt_start
         patient_text = stt_result["text"]
+        logger.info("⏱ STT took %.2fs", stt_time)
 
         if not patient_text.strip():
             # If transcription is empty, ask user to repeat
@@ -114,14 +120,29 @@ class VoiceMedicalAgent:
 
         logger.info(f"Patient said: {patient_text}")
 
-        # Step 2: Doctor Agent Response
+        # Step 2: Doctor Agent Response (medical context search + LLM)
         logger.info("Step 2: Getting doctor response...")
+        llm_start = time.perf_counter()
         doctor_text = await self.doctor.get_response(patient_text)
+        llm_time = time.perf_counter() - llm_start
+        logger.info("⏱ LLM (context search + generation) took %.2fs", llm_time)
         logger.info(f"Doctor said: {doctor_text}")
 
         # Step 3: Text-to-Speech
         logger.info("Step 3: Synthesizing doctor's speech...")
+        tts_start = time.perf_counter()
         tts_result = await self.tts.synthesize(doctor_text, self.language)
+        tts_time = time.perf_counter() - tts_start
+        logger.info("⏱ TTS took %.2fs", tts_time)
+
+        total_time = time.perf_counter() - pipeline_start
+        logger.info(
+            "⏱ TOTAL PIPELINE: %.2fs (STT %.2fs | LLM %.2fs | TTS %.2fs)",
+            total_time,
+            stt_time,
+            llm_time,
+            tts_time,
+        )
 
         return {
             "patient_text": patient_text,

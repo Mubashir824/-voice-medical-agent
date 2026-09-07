@@ -7,6 +7,7 @@ IMPORTANT: Yeh agent sirf guidance ke liye hai - yeh real doctor ka replacement 
 """
 from typing import Optional
 import logging
+import time
 
 from openai import OpenAI
 
@@ -150,6 +151,14 @@ class DoctorAgent:
                 self._llm_client = OpenAI(api_key=self.config.openai_api_key)
         return self._llm_client
 
+    def _get_model_name(self) -> str:
+        """Get the LLM model name based on the configured provider."""
+        if self.config.llm_provider == "dashscope":
+            return self.config.qwen_llm_model
+        elif self.config.llm_provider == "ollama":
+            return self.config.ollama_llm_model
+        return self.config.llm_model
+
     def _set_language(self, language: str):
         """Set the system prompt based on language."""
         prompts = {
@@ -158,6 +167,14 @@ class DoctorAgent:
             "en": SYSTEM_PROMPT_ENGLISH,
         }
         system_prompt = prompts.get(language, prompts["ur"])
+
+        # Qwen3 "thinking" models generate hidden reasoning tokens before
+        # answering, which can make responses 5-10x slower. The /no_think
+        # soft switch (official Qwen3 feature) disables this for fast,
+        # direct answers - ideal for voice conversations.
+        if "qwen3" in self._get_model_name().lower():
+            system_prompt += "\n\n/no_think"
+
         self.conversation_history = [{"role": "system", "content": system_prompt}]
 
     def set_language(self, language: str):
@@ -182,15 +199,24 @@ class DoctorAgent:
         # --- Inject medical knowledge context ---
         # Search the medical knowledge base for relevant info
         medical_context = ""
+        context_time = 0.0
         if self.knowledge_base:
+            kb_start = time.perf_counter()
             medical_context = self.knowledge_base.get_context_for_patient(
                 patient_message
             )
+            context_time = time.perf_counter() - kb_start
             if medical_context:
                 logger.info(
-                    "Medical context found (%d chars) for: %.60s...",
+                    "⏱ Medical context search took %.3fs (found %d chars) for: %.60s...",
+                    context_time,
                     len(medical_context),
                     patient_message,
+                )
+            else:
+                logger.info(
+                    "⏱ Medical context search took %.3fs (no relevant results)",
+                    context_time,
                 )
 
         # Build the messages list for this LLM call.
@@ -217,28 +243,38 @@ class DoctorAgent:
         )
 
         # Select model based on provider
-        if self.config.llm_provider == "dashscope":
-            model = self.config.qwen_llm_model
-        elif self.config.llm_provider == "ollama":
-            model = self.config.ollama_llm_model
-        else:
-            model = self.config.llm_model
+        model = self._get_model_name()
 
         # Increase max_tokens when we have medical context so the
         # model can reference it properly
         response_max_tokens = 400 if medical_context else 300
 
         # Call LLM (same code works for OpenAI, Qwen DashScope, and Ollama)
-        response = self.llm_client.chat.completions.create(
-            model=model,
-            messages=messages_for_llm,
-            temperature=0.7,       # Slightly creative for empathetic responses
-            max_tokens=response_max_tokens,
-            presence_penalty=0.3,
-            frequency_penalty=0.3,
-        )
+        llm_start = time.perf_counter()
+        create_kwargs = {
+            "model": model,
+            "messages": messages_for_llm,
+            "temperature": 0.7,       # Slightly creative for empathetic responses
+            "max_tokens": response_max_tokens,
+        }
+
+        # Ollama does not support these penalties - only send them
+        # to cloud providers (OpenAI/DashScope)
+        if self.config.llm_provider != "ollama":
+            create_kwargs["presence_penalty"] = 0.3
+            create_kwargs["frequency_penalty"] = 0.3
+
+        response = self.llm_client.chat.completions.create(**create_kwargs)
+        llm_time = time.perf_counter() - llm_start
 
         doctor_response = response.choices[0].message.content.strip()
+
+        logger.info(
+            "⏱ LLM call took %.2fs (model: %s, response: %d chars)",
+            llm_time,
+            model,
+            len(doctor_response),
+        )
 
         # Add to persistent history for context
         self.conversation_history.append(
