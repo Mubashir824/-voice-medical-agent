@@ -1,0 +1,27 @@
+[
+  {
+    "publisher": "Cancer Council",
+    "title": "Understanding Primary Bone Cancer",
+    "url": "https://www.cancer.org.au/assets/pdf/understanding-primary-bone-cancer"
+  },
+  {
+    "publisher": "Cancer Council",
+    "title": "Understanding Secondary Bone Cancer",
+    "url": "https://www.cancer.org.au/assets/pdf/understanding-secondary-bone-cancer"
+  },
+  {
+    "publisher": "Leukaemia Foundation",
+    "title": "Myeloma",
+    "url": "https://www.leukaemia.org.au/blood-cancer/myeloma/"
+  },
+  {
+    "publisher": "Leukaemia Foundation",
+    "title": "Leukaemia",
+    "url": "https://www.leukaemia.org.au/blood-cancer/leukaemia/"
+  },
+  {
+    "publisher": "Lymphoma Australia",
+    "title": "Bone Marrow Biopsy",
+    "url": "https://www.lymphoma.org.au/lymphoma/tests-diagnosis-and-staging/bone-marrow-biopsy/"
+  }
+]

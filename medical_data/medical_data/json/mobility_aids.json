@@ -1,0 +1,57 @@
+[
+  {
+    "publisher": "Carers NSW Australia",
+    "title": "Aids and equipment",
+    "url": "https://www.carersnsw.org.au/services-and-support/advice-for-carers/aids-and-equipment"
+  },
+  {
+    "publisher": "Musculoskeletal Health Australia",
+    "title": "Making life easier",
+    "url": "https://muscha.org/making-life-easier/"
+  },
+  {
+    "publisher": "Australian Institute of Health and Welfare",
+    "title": "People with disability in Australia - Mobility and transport",
+    "url": "https://www.aihw.gov.au/reports/disability/people-with-disability-in-australia/contents/people-with-disability/activities-people-need-help-with#mob_trans"
+  },
+  {
+    "publisher": "NSW Government",
+    "title": "Modified vehicles for people with disability",
+    "url": "https://www.nsw.gov.au/driving-boating-and-transport/driver-and-rider-licences/health-conditions-and-disability/driving-or-riding-disability/modified-vehicles"
+  },
+  {
+    "publisher": "lifecare",
+    "title": "Braces and walking aids",
+    "url": "https://www.lifecare.com.au/service/braces-and-walking-aids/"
+  },
+  {
+    "publisher": "BMC Geriatrics",
+    "title": "Powered mobility device use in residential aged care: a retrospective audit of incidents and injuries",
+    "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10257823/"
+  },
+  {
+    "publisher": "Transport for NSW",
+    "title": "Mobility aid specifications",
+    "url": "https://transportnsw.info/travel-info/using-public-transport/accessible-travel/mobility-aid-specifications"
+  },
+  {
+    "publisher": "Department of Veteran’s Affairs",
+    "title": "Assistance Dogs",
+    "url": "https://www.dva.gov.au/what-we-help-with/care-at-home-and-aged-care-services/living-independently/dva-in-home-programs/aids-equipment-and-modifications-through-the-rehabilitation-appliances-program-rap/assistance-dogs"
+  },
+  {
+    "publisher": "Department of Veteran’s Affairs",
+    "title": "Electric Recliner Chairs",
+    "url": "https://www.dva.gov.au/providers/programs-services-information-for-providers/rap-overview/the-rap-national-guidelines/electric-recliner-chairs"
+  },
+  {
+    "publisher": "Department of Veteran’s Affairs",
+    "title": "Electric Mobility Aids",
+    "url": "https://www.dva.gov.au/providers/programs-services-information-providers/rap-overview/rap-national-guidelines/electric-mobility-aids"
+  },
+  {
+    "publisher": "Department of Veteran’s Affairs",
+    "title": "Adjustable Electric Beds",
+    "url": "https://www.dva.gov.au/providers/programs-services-information-providers/rap-overview/rap-national-guidelines/adjustable-electric-beds"
+  }
+]

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Medical Agent | طبی مشاورت</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --bg-hover: #2a2a2a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666;
+            --accent: #c96442;
+            --accent-light: #e07a5f;
+            --accent-glow: rgba(201, 100, 66, 0.3);
+            --doctor-bg: #1e2a1e;
+            --doctor-border: #2d4a2d;
+            --doctor-accent: #4ade80;
+            --patient-bg: #1a2332;
+            --patient-border: #2d4a6a;
+            --patient-accent: #60a5fa;
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.3);
+            --border: #2a2a2a;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Nastaliq Urdu', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ═══ Layout ═══ */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 860px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* ═══ Header ═══ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 10;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #e07a5f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+
+        .header-title h1 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .header-title .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* ═══ Language Toggle ═══ */
+        .lang-toggle {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            padding: 7px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .lang-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        /* ═══ Chat Area ═══ */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-area::-webkit-scrollbar { width: 4px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        /* ═══ Welcome State ═══ */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 40px;
+            animation: fadeUp 0.6s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--accent), #e07a5f, #f4a261);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .welcome h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-width: 400px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .welcome-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 12px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .feature-card .icon { font-size: 24px; margin-bottom: 8px; }
+        .feature-card .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ═══ Messages ═══ */
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 85%;
+            animation: msgIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .message.doctor { align-self: flex-start; }
+        .message.patient { align-self: flex-end; flex-direction: row-reverse; }
+
+        .msg-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message.doctor .msg-avatar {
+            background: var(--doctor-bg);
+            border: 1px solid var(--doctor-border);
+        }
+
+        .message.patient .msg-avatar {
+            background: var(--patient-bg);
+            border: 1px solid var(--patient-border);
+        }
+
+        .msg-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .msg-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 4px;
+        }
+
+        .message.doctor .msg-label { color: var(--doctor-accent); }
+        .message.patient .msg-label { color: var(--patient-accent); }
+
+        .msg-bubble {
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            font-size: 14.5px;
+            line-height: 1.7;
+            direction: rtl;
+        }
+
+        .message.doctor .msg-bubble {
+            background: var(--doctor-bg);
+            border: 1px solid var(--doctor-border);
+            border-top-left-radius: 4px;
+            color: #d1e7d1;
+        }
+
+        .message.patient .msg-bubble {
+            background: var(--patient-bg);
+            border: 1px solid var(--patient-border);
+            border-top-right-radius: 4px;
+            color: #c9daf0;
+        }
+
+        .msg-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            padding: 0 4px;
+        }
+
+        .message.patient .msg-time { text-align: left; }
+
+        /* ═══ Typing Indicator ═══ */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            gap: 12px;
+            align-items: flex-end;
+            padding-left: 0;
+        }
+
+        .typing-indicator.show { display: flex; }
+
+        .typing-bubble {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            border-top-left-radius: 4px;
+            padding: 16px 22px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* ═══ Bottom Bar ═══ */
+        .bottom-bar {
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* ═══ Call Button ═══ */
+        .call-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .call-btn.start-call {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+        }
+
+        .call-btn.start-call:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 24px rgba(34, 197, 94, 0.5);
+        }
+
+        .call-btn.end-call {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 16px var(--danger-glow);
+        }
+
+        .call-btn.end-call:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 24px rgba(239, 68, 68, 0.5);
+        }
+
+        .call-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ═══ Mic Button ═══ */
+        .mic-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mic-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .mic-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .mic-btn.recording {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+            animation: micPulse 1.5s infinite;
+        }
+
+        @keyframes micPulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--danger-glow); }
+            50% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+        }
+
+        /* ═══ Waveform ═══ */
+        .waveform {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 40px;
+            padding: 0 16px;
+        }
+
+        .waveform.active { display: flex; }
+
+        .wave-bar {
+            width: 3px;
+            border-radius: 3px;
+            background: var(--danger);
+            animation: waveAnim 0.8s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes waveAnim {
+            0%, 100% { height: 6px; }
+            50% { height: 28px; }
+        }
+
+        /* ═══ Status Bar ═══ */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            min-height: 20px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.live {
+            background: #22c55e;
+            animation: statusPulse 2s infinite;
+        }
+
+        .status-dot.recording {
+            background: var(--danger);
+            animation: statusPulse 1s infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ═══ Disclaimer ═══ */
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 8px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-primary);
+        }
+
+        .disclaimer span { opacity: 0.7; }
+
+        /* ═══ Responsive ═══ */
+        @media (max-width: 640px) {
+            .header { padding: 12px 16px; }
+            .chat-area { padding: 16px; }
+            .bottom-bar { padding: 12px 16px 20px; }
+            .welcome-features { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .feature-card { padding: 12px 8px; }
+            .message { max-width: 92%; }
+            .header-title h1 { font-size: 14px; }
+        }
+
+        /* ═══ LTR override for English ═══ */
+        .ltr .msg-bubble,
+        .ltr .message { direction: ltr; }
+        .ltr .message.patient { flex-direction: row; }
+        .ltr .message.patient .msg-time { text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">🩺</div>
+                <div class="header-title">
+                    <h1>Voice Medical Agent</h1>
+                    <div class="subtitle" id="headerSubtitle">صوتی طبی مشاورت</div>
+                </div>
+            </div>
+            <div class="lang-toggle">
+                <button class="lang-btn active" data-lang="ur" onclick="setLang('ur')">اردو</button>
+                <button class="lang-btn" data-lang="sd" onclick="setLang('sd')">سنڌي</button>
+                <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chatArea">
+            <!-- Welcome State -->
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">🩺</div>
+                <h2 id="welcomeTitle">اپنی صحت کے بارے میں بات کریں</h2>
+                <p id="welcomeDesc">آواز کے ذریعے اپنے علامات بتائیں اور ابتدائی طبی رہنمائی حاصل کریں — اردو، سنڌي، یا انگلش میں</p>
+                <div class="welcome-features">
+                    <div class="feature-card">
+                        <div class="icon">🎤</div>
+                        <div class="label" id="feat1">آواز سے بات کریں</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🧠</div>
+                        <div class="label" id="feat2">AI ڈاکٹر مشورہ</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔊</div>
+                        <div class="label" id="feat3">آواز میں جواب</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="msg-avatar" style="background:var(--doctor-bg);border:1px solid var(--doctor-border);">🩺</div>
+                <div class="typing-bubble">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="bottom-bar">
+            <div class="status-bar">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">کال شروع کرنے کے لیے بٹن دبائیں</span>
+            </div>
+            <div class="controls">
+                <button class="call-btn start-call" id="callBtn" onclick="toggleCall()" title="Start Call">
+                    📞
+                </button>
+
+                <div class="mic-wrapper">
+                    <button class="mic-btn" id="micBtn" onclick="toggleMic()" disabled title="Hold to speak">
+                        🎤
+                    </button>
+                </div>
+
+                <div class="waveform" id="waveform"></div>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <span>⚠️ یہ صرف ابتدائی طبی رہنمائی ہے — حقیقی ڈاکٹر سے مشورہ ضروری ہے</span>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════
+        //  STATE
+        // ═══════════════════════════════════════════════════════
+        let sessionId = null;
+        let selectedLang = 'ur';
+        let isCallActive = false;
+        let mediaRecorder = null;
+        let isRecording = false;
+        let audioChunks = [];
+        let waveformBars = [];
+
+        // ═══════════════════════════════════════════════════════
+        //  DOM
+        // ═══════════════════════════════════════════════════════
+        const $ = id => document.getElementById(id);
+        const chatArea = $('chatArea');
+        const welcome = $('welcome');
+        const callBtn = $('callBtn');
+        const micBtn = $('micBtn');
+        const statusDot = $('statusDot');
+        const statusText = $('statusText');
+        const typingIndicator = $('typingIndicator');
+        const waveform = $('waveform');
+        const app = $('app');
+
+        // Build waveform bars
+        for (let i = 0; i < 24; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wave-bar';
+            bar.style.animationDelay = `${(i * 0.07).toFixed(2)}s`;
+            waveform.appendChild(bar);
+            waveformBars.push(bar);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  LOCALIZATION
+        // ═══════════════════════════════════════════════════════
+        const i18n = {
+            ur: {
+                subtitle: 'صوتی طبی مشاورت',
+                welcomeTitle: 'اپنی صحت کے بارے میں بات کریں',
+                welcomeDesc: 'آواز کے ذریعے اپنے علامات بتائیں اور ابتدائی طبی رہنمائی حاصل کریں',
+                feat1: 'آواز سے بات کریں', feat2: 'AI ڈاکٹر مشورہ', feat3: 'آواز میں جواب',
+                ready: 'کال شروع کرنے کے لیے بٹن دبائیں',
+                connecting: 'کال شروع ہو رہی ہے...',
+                active: 'کال فعال — بولنے کے لیے 🎤 دبائیں',
+                recording: '🔴 ریکارڈنگ... دوبارہ دبائیں',
+                sending: 'آواز بھیج رہے ہیں...',
+                endReady: 'کال ختم ہو گئی',
+            },
+            sd: {
+                subtitle: 'آوازي طبي مشاورت',
+                welcomeTitle: 'پنهنجي صحت بابت ڳالهايو',
+                welcomeDesc: 'آواز ذريعي پنهنجا علامتون ٻڌايو ۽ شروعاتي طبي رهنمائي حاصل ڪريو',
+                feat1: 'آواز سان ڳالهايو', feat2: 'AI ڊاڪٽر مشورو', feat3: 'آواز ۾ جواب',
+                ready: 'ڪال شروع ڪرڻ لاءِ بٽڻ دٻايو',
+                connecting: 'ڪال شروع ٿي رهي آهي...',
+                active: 'ڪال فعال — ڳالهائڻ لاءِ 🎤 دٻايو',
+                recording: '🔴 رڪارڊنگ... ٻيهر دٻايو',
+                sending: 'آواز موڪلي رهيا آهيون...',
+                endReady: 'ڪال ختم ٿي وئي',
+            },
+            en: {
+                subtitle: 'Voice Medical Consultation',
+                welcomeTitle: 'Talk about your health',
+                welcomeDesc: 'Describe your symptoms by voice and get preliminary medical guidance',
+                feat1: 'Speak by voice', feat2: 'AI Doctor advice', feat3: 'Voice response',
+                ready: 'Press button to start call',
+                connecting: 'Starting call...',
+                active: 'Call active — press 🎤 to speak',
+                recording: '🔴 Recording... press again to stop',
+                sending: 'Sending audio...',
+                endReady: 'Call ended',
+            }
+        };
+
+        function setLang(lang) {
+            selectedLang = lang;
+            const t = i18n[lang];
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.lang-btn[data-lang="${lang}"]`).classList.add('active');
+
+            $('headerSubtitle').textContent = t.subtitle;
+            $('welcomeTitle').textContent = t.welcomeTitle;
+            $('welcomeDesc').textContent = t.welcomeDesc;
+            $('feat1').textContent = t.feat1;
+            $('feat2').textContent = t.feat2;
+            $('feat3').textContent = t.feat3;
+
+            if (!isCallActive) setStatus('ready', t.ready);
+
+            // Direction
+            document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
+            app.classList.toggle('ltr', lang === 'en');
+        }
+
+        function setStatus(type, text) {
+            statusText.textContent = text;
+            statusDot.className = 'status-dot';
+            if (type === 'live') statusDot.classList.add('live');
+            if (type === 'recording') statusDot.classList.add('recording');
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  CALL
+        // ═══════════════════════════════════════════════════════
+        async function toggleCall() {
+            if (!isCallActive) await startCall();
+            else await endCall();
+        }
+
+        async function startCall() {
+            try {
+                setStatus('live', i18n[selectedLang].connecting);
+                welcome.style.display = 'none';
+
+                const form = new FormData();
+                form.append('language', selectedLang);
+
+                const res = await fetch('/api/session/start', { method: 'POST', body: form });
+                const data = await res.json();
+                sessionId = data.session_id;
+                isCallActive = true;
+
+                callBtn.className = 'call-btn end-call';
+                callBtn.innerHTML = '📵';
+                micBtn.disabled = false;
+                setStatus('live', i18n[selectedLang].active);
+
+                addMessage(data.greeting_text, 'doctor');
+                playAudio(data.greeting_audio, data.audio_format);
+            } catch (err) {
+                setStatus('', 'Error — try again');
+                console.error(err);
+            }
+        }
+
+        async function endCall() {
+            try {
+                if (sessionId) {
+                    const res = await fetch(`/api/session/${sessionId}/end`, { method: 'POST' });
+                    const data = await res.json();
+                    addMessage(data.farewell_text, 'doctor');
+                    playAudio(data.farewell_audio, data.audio_format);
+                }
+            } catch (err) { console.error(err); }
+            finally {
+                isCallActive = false;
+                sessionId = null;
+                callBtn.className = 'call-btn start-call';
+                callBtn.innerHTML = '📞';
+                micBtn.disabled = true;
+                micBtn.classList.remove('recording');
+                waveform.classList.remove('active');
+                setStatus('', i18n[selectedLang].endReady);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  MICROPHONE
+        // ═══════════════════════════════════════════════════════
+        async function toggleMic() {
+            if (!isRecording) await startRecording();
+            else await stopRecording();
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await sendAudio(blob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.classList.add('recording');
+                waveform.classList.add('active');
+                setStatus('recording', i18n[selectedLang].recording);
+            } catch (err) {
+                setStatus('', 'Microphone permission denied');
+                console.error(err);
+            }
+        }
+
+        async function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            waveform.classList.remove('active');
+            setStatus('live', i18n[selectedLang].sending);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  SEND AUDIO
+        // ═══════════════════════════════════════════════════════
+        async function sendAudio(blob) {
+            try {
+                typingIndicator.classList.add('show');
+                scrollChat();
+
+                const form = new FormData();
+                form.append('audio', blob, 'recording.webm');
+
+                const res = await fetch(`/api/session/${sessionId}/speak`, { method: 'POST', body: form });
+                const data = await res.json();
+
+                typingIndicator.classList.remove('show');
+                setStatus('live', i18n[selectedLang].active);
+
+                if (data.patient_text) addMessage(data.patient_text, 'patient');
+                addMessage(data.doctor_text, 'doctor');
+                playAudio(data.doctor_audio, data.audio_format);
+            } catch (err) {
+                typingIndicator.classList.remove('show');
+                setStatus('', 'Error sending audio');
+                console.error(err);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  HELPERS
+        // ═══════════════════════════════════════════════════════
+        function addMessage(text, role) {
+            const msg = document.createElement('div');
+            msg.className = `message ${role}`;
+
+            const avatar = role === 'doctor' ? '🩺' : '🧑';
+            const label = role === 'doctor'
+                ? (selectedLang === 'en' ? 'Doctor' : selectedLang === 'sd' ? 'ڊاڪٽر' : 'ڈاکٹر')
+                : (selectedLang === 'en' ? 'You' : selectedLang === 'sd' ? 'توهان' : 'آپ');
+
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            msg.innerHTML = `
+                <div class="msg-avatar">${avatar}</div>
+                <div class="msg-content">
+                    <div class="msg-label">${label}</div>
+                    <div class="msg-bubble">${text}</div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+
+            chatArea.insertBefore(msg, typingIndicator);
+            scrollChat();
+        }
+
+        function scrollChat() {
+            requestAnimationFrame(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            });
+        }
+
+        function playAudio(base64, format) {
+            try {
+                const bin = atob(base64);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const mime = format === 'mp3' ? 'audio/mpeg' : 'audio/wav';
+                const audio = new Audio(URL.createObjectURL(new Blob([bytes], { type: mime })));
+                audio.play().catch(() => {});
+            } catch (e) { console.warn('Audio play failed:', e); }
+        }
+
+        // Init
+        setLang('ur');
+    </script>
+</body>
+</html>
