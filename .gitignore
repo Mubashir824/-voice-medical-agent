@@ -13,8 +13,42 @@ venv/
 env/
 .venv/
 
-# Environment Variables (NEVER commit secrets)
+# ── Secrets & Credentials (NEVER commit these!) ──────────────────
+# Environment variable files (real API keys live here)
 .env
+.env.*
+*.env
+!.env.example
+
+# API keys / tokens
+*api_key*.json
+*apikey*.txt
+secrets.*
+*_secrets.*
+
+# Service account / credentials JSON (Google, AWS, Azure, etc.)
+service-account*.json
+*-service-account*.json
+*credentials*.json
+
+# Private keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Databases (may contain passwords / user data)
+*.sqlite
+*.sqlite3
+*.db
+
+# ── Large binary files ───────────────────────────────────────────
+# Archives can accidentally bundle a .env with real keys inside
+*.zip
+*.tar
+*.tar.gz
+*.7z
 
 # IDE
 .vscode/
@@ -25,9 +59,14 @@ env/
 # OS
 Thumbs.db
 .DS_Store
+__MACOSX/
+._*
 
 # Audio temp files
 *.wav
 *.mp3
 *.webm
 !static/*
+
+# Logs
+*.log
