@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏥 Voice Medical Agent - صوتی طبی مشاورت
 ### Urdu + Sindhi Voice-Based Doctor Consultation Agent
 
@@ -216,3 +217,7 @@ voice-medical-agent/
 - [ ] Medical history database per user
 - [ ] Appointment booking with real doctors
 - [ ] Prescription generation
+=======
+# voice-medical-agent
+this is Voice medical agent
+>>>>>>> fab60290a06906921c81a3b03a68402847f7286b
